@@ -1,49 +1,30 @@
 <?php
 
 namespace MicroDB;
-
 use Exception;
 use InvalidArgumentException;
 
 /**
- * A file-based JSON object database
+ * Description of Database
+ *
+ * @author Sébastien Dugène
  */
 class Database
 {
-    /**
-     * @var string
-     */
     protected $path;
+	protected $mode;
 
-    /**
-     * @var int
-     */
-    protected $mode;
-
-    /**
-     * @var array
-     */
     private $handlers = array();
-
+	private $locks = array();
+	private $pass = '1234567812345678';
+	private $iv = '1234567812345678';
+    
     /**
-     * @var array
+     * @return void
      */
-    private $locks = array();
-
-    /**
-     * Constructor
-     *
-     * @param string $path
-     * @param int $mode
-     */
-    public function __construct($path, $mode = 0775)
+    public function __construct()
     {
-        $path = (string)rtrim($path, '/') . '/';
-
-        $this->path = $path;
-        $this->mode = $mode;
-
-        $this->makeDir($this->path, $this->mode);
+        // I must be empty
     }
 
     /**
@@ -61,11 +42,11 @@ class Database
         return $this->synchronized('_auto', function () use ($self, $data) {
 
             $next = 1;
-
-            if ($self->exists('_auto')) {
-
-                $next = $self->load('_auto', 'next');
-
+            
+            if (array_key_exists('id', $data) && is_numeric($data['id'])) {
+            	$next = $data['id'];
+            } elseif ($self->exists('_auto')) {
+				$next = $self->load('_auto', 'next');
             }
 
             $self->save('_auto', array('next' => $next + 1));
@@ -73,7 +54,7 @@ class Database
 
             return $next;
         });
-
+		return false;
     }
 
     /**
@@ -81,16 +62,14 @@ class Database
      *
      * @param mixed $id
      * @param mixed $data
-     * @return void
+     * @return boolean
      * @throws Exception if synchronization failed
      */
     public function save($id, $data)
     {
-
         $self = $this;
         $event = new Event($this, $id, $data);
-
-        return $this->synchronized($id, function () use ($self, $event) {
+        $this->synchronized($id, function () use ($self, $event) {
 
             $self->triggerId('beforeSave', $event);
 
@@ -99,21 +78,44 @@ class Database
             $self->triggerId('saved', $event);
 
         });
+        
+        if (is_file($this->path . $id) && file_get_contents($this->path . $id) === $this->encrypt(json_encode($data))) {
+        	return true;
+        }
+        return false;
+    }
+
+    /**
+     * Decrypt data
+     *
+     * @param string $string
+     * @param string method
+     * @return string
+     */
+    private function decrypt($string, $method = 'aes-128-cbc')
+    {
+    	if (function_exists('openssl_decrypt')) {
+    		return openssl_decrypt($string, $method, $this->pass, OPENSSL_RAW_DATA, $this->iv);
+    	} else {
+    		return hex2bin(preg_replace('/^'.bin2hex($pass).'/', '', $string));
+    	}
 
     }
-    
-    
-    private function decrypt($string, $method = 'aes-128-cbc', $pass = '1234567812345678', $iv = '1234567812345678')
-    {
-    	return openssl_decrypt($string, $method, $pass, OPENSSL_RAW_DATA, $iv);
 
-    }
-    
-    
-    private function encrypt($string, $method = 'aes-128-cbc', $pass = '1234567812345678', $iv = '1234567812345678')
+    /**
+     * Encrypt data
+     *
+     * @param string $string
+     * @param string method
+     * @return string
+     */
+    private function encrypt($string, $method = 'aes-128-cbc')
     {
-    	return openssl_encrypt($string, $method, $pass, OPENSSL_RAW_DATA, $iv);
-
+    	if (function_exists('openssl_encrypt')) {
+    		return openssl_encrypt($string, $method, $this->pass, OPENSSL_RAW_DATA, $this->iv);
+    	} else {
+    		return bin2hex($pass).bin2hex($string);
+    	}
     }
 
     /**
@@ -133,8 +135,8 @@ class Database
             return $results;
         }
 
-        if (!$this->validId($id)) {
-            return null;
+        if (!$this->exists($id)) {
+            return false;
         }
 
         $event = new Event($this, $id);
@@ -148,7 +150,11 @@ class Database
         if (isset($key)) {
             return @$event->data[$key];
         }
-        return $event->data;
+        
+        if ($event->data) {
+        	return $event->data;
+        }
+        return false;
     }
 
     /**
@@ -159,6 +165,10 @@ class Database
      */
     public function delete($id)
     {
+    	if (!$this->exists($id) || !$this->load($id)) {
+    		return false;
+    	}
+    	
         if (is_array($id)) {
             $results = array();
             foreach ($id as $i) {
@@ -170,13 +180,34 @@ class Database
         $self = $this;
         $event = new Event($this, $id);
 
-        return $this->synchronized($id, function () use ($self, $event) {
+        $this->synchronized($id, function () use ($self, $event) {
             $self->triggerId('beforeDelete', $event);
 
             $self->erase($this->path . $event->id);
 
             $self->triggerId('deleted', $event);
         });
+        
+        if (!$this->exists($id)) {
+    		return true;
+    	}
+    	return false;
+    }
+
+    /**
+     * Copy data to database
+     * @param array $data
+     * @return mixed
+     */
+    public function copy($data)
+    {
+    	if (!$this->exists($data['id'])) {
+    		return $this->create($data);
+    	} elseif ($this->load($data['id'])) {
+    		return $this->save($data['id'], $data);
+    	} else {
+    		return false;
+    	}
     }
 
     /**
@@ -426,7 +457,7 @@ class Database
         if (is_file($file) && file_get_contents($file) === $data) {
             touch($file);
             chmod($file, $this->mode);
-            return;
+            return true;
         }
 
         file_put_contents($file, $data);
@@ -586,5 +617,51 @@ class Database
         if (!is_dir($path)) {
             mkdir($path, $mode, true);
         }
+    }
+    
+     /**
+     * set folder path
+     *
+     * @param string $path
+     * @param int $mode
+     * @return object $this
+     */
+    public function setPath($path, $mode = 0775)
+    {
+    	$path = (string)rtrim($path, '/') . '/';
+
+        $this->path = $path;
+        $this->mode = $mode;
+
+        $this->makeDir($this->path, $this->mode);
+        return $this;
+    }
+    
+     /**
+     * set ssl pass
+     *
+     * @param string $pass
+     * @return object $this
+     */
+    public function setPass($pass)
+    {
+    	if ($pass != '') {
+    		$this->pass = $pass;
+    	}
+        return $this;
+    }
+    
+     /**
+     * set ssl pass
+     *
+     * @param string $pass
+     * @return object $this
+     */
+    public function setIv($iv)
+    {
+    	if ($iv != '') {
+    		$this->iv = $iv;
+    	}
+        return $this;
     }
 }
