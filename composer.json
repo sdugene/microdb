@@ -1,7 +1,7 @@
 {
 	"name"        : "siteoffice/microdb",
     "type"        : "library",
-	"description" : "SiteOffice microdb is a for of MicroDB a minimalistic file-based JSON object database written in PHP.",
+	"description" : "SiteOffice microdb is a fork of MicroDB a minimalistic file-based JSON object database written in PHP.",
 	"keywords"    : ["database", "file", "json"],
     "homepage"    : "http://www.siteoffice-cms.fr/",
 	"license"     : "MIT",
