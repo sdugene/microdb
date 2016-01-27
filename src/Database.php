@@ -94,11 +94,25 @@ class Database
 
             $self->triggerId('beforeSave', $event);
 
-            $self->put($this->path . $event->id, json_encode($event->data));
+            $self->put($this->path . $event->id, $this->encrypt(json_encode($event->data)));
 
             $self->triggerId('saved', $event);
 
         });
+
+    }
+    
+    
+    private function decrypt($string, $method = 'aes-128-cbc', $pass = '1234567812345678', $iv = '1234567812345678')
+    {
+    	return openssl_decrypt($string, $method, $pass, OPENSSL_RAW_DATA, $iv);
+
+    }
+    
+    
+    private function encrypt($string, $method = 'aes-128-cbc', $pass = '1234567812345678', $iv = '1234567812345678')
+    {
+    	return openssl_encrypt($string, $method, $pass, OPENSSL_RAW_DATA, $iv);
 
     }
 
@@ -127,7 +141,7 @@ class Database
 
         $this->triggerId('beforeLoad', $event);
 
-        $event->data = json_decode($this->get($this->path . $event->id), true);
+        $event->data = json_decode($this->decrypt($this->get($this->path . $event->id)), true);
 
         $this->triggerId('loaded', $event);
 
