@@ -97,7 +97,7 @@ class Database
     	if (function_exists('openssl_decrypt')) {
     		return openssl_decrypt($string, $method, $this->pass, OPENSSL_RAW_DATA, $this->iv);
     	} else {
-    		return hex2bin(preg_replace('/^'.bin2hex($pass).'/', '', $string));
+    		return hex2bin(preg_replace('/^'.bin2hex($this->pass).'/', '', $string));
     	}
 
     }
@@ -114,7 +114,7 @@ class Database
     	if (function_exists('openssl_encrypt')) {
     		return openssl_encrypt($string, $method, $this->pass, OPENSSL_RAW_DATA, $this->iv);
     	} else {
-    		return bin2hex($pass).bin2hex($string);
+    		return bin2hex($this->pass).bin2hex($string);
     	}
     }
 
@@ -127,7 +127,7 @@ class Database
      */
     public function load($id, $key = null)
     {
-        if (is_array($id)) {
+		if (is_array($id)) {
             $results = array();
             foreach ($id as $i) {
                 $results[$i] = $this->load($i);
