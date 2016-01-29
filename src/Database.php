@@ -643,7 +643,7 @@ class Database
      * @param string $pass
      * @return object $this
      */
-    public function setPass($pass)
+    private function setPass($pass)
     {
     	if ($pass != '') {
     		$this->pass = $pass;
@@ -657,11 +657,16 @@ class Database
      * @param string $pass
      * @return object $this
      */
-    public function setIv($iv)
+    private function setIv($iv)
     {
     	if ($iv != '') {
     		$this->iv = $iv;
     	}
         return $this;
+    }
+    
+    public function secure($input)
+    {
+    	$this->setPass($input['identification'])->setIv($input['initialisation']);
     }
 }
