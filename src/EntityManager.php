@@ -10,18 +10,18 @@ use Engine\Functions\Object;
  */
 class EntityManager
 {
-	private static $_instance = null;
+    private static $_instance = null;
 	
-	protected $joinedProperties = null;
+    protected $joinedProperties = null;
     protected $reflectionClass = null;
     protected $properties = null;
     protected $mapping = null;
     protected $class = null;
 	
-	private $conf = [];
-	private $entity = null;
-	private $folder = null;
-	private $database;
+    private $conf = [];
+    private $entity = null;
+    private $folder = null;
+    private $database;
 
     /**
      * @return void
