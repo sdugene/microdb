@@ -110,13 +110,21 @@ class EntityManager
     {
     	$results = [];
     	$array = $this->database->find($criteria);
+    	$max = max(array_keys($array));
     	foreach ($array as $key => $value) {
-    		if ($key == $maxLine) {
+    		if ($maxLine && count($results) == $maxLine) {
     			break;
     		}
-    		$results[] = Object::fillWithJSon($this->entity, json_encode($value));
+    		$resultKey = $this->order($key, $value, $order, $max);
+    		$results[$resultKey] = Object::fillWithJSon(new $this->class(), json_encode($value));
     	}
-    	return $results;
+    	
+    	if ($order && $order[key($order)] == 'ASC') {
+    		ksort($results);
+    	} elseif ($order && $order[key($order)] == 'DESC') {
+    		krsort($results);
+    	}
+    	return array_values($results);
     }
 
     /**
@@ -130,17 +138,23 @@ class EntityManager
     private function findWithJoin($criteria = [], $join = [], $maxLine = false, $order = false, $group = false)
     {
         $results = [];
-        $i = 0;
     	$array = $this->database->find($criteria);
+    	$max = max(array_keys($array));
     	foreach ($array as $key => $value) {
-    		if ($key == $maxLine) {
+    		if ($maxLine && count($results) == $maxLine) {
     			break;
     		}
-    		$results[$i] = Object::fillWithJSon($this->entity, json_encode($value));
-    		$results[$i] = $this->join($join, $results[$i]);
-    		$i++;
+    		$resultKey = $this->order($key, $value, $order, $max);
+    		$results[$resultKey] = Object::fillWithJSon($this->entity, json_encode($value));
+    		$results[$resultKey] = $this->join($join, $results[$resultKey]);
     	}
-    	return $results;
+    	
+    	if ($order && $order[key($order)] == 'ASC') {
+    		ksort($results);
+    	} elseif ($order && $order[key($order)] == 'DESC') {
+    		krsort($results);
+    	}
+    	return array_values($results);
     }
 
     /**
@@ -239,5 +253,31 @@ class EntityManager
     				break;
     		}
     	}
+    }
+    
+    private function order($key, $array, $order, $max)
+    {
+    	if (!$order) {
+    		return $key;
+    	}
+    	
+    	$orderValue = '';
+    	foreach ($order as $target => $value) {
+	    	if (is_numeric($array[$target])) {
+	    		$orderValue .= $array[$target]*1000000;
+	    	} else {
+	    		for($i=0 ; $i < 7 ; $i++) {
+	    			$ord = ord(substr($array[$target].'       ',$i,1));
+	    			
+	    			if ($ord < 100) {
+	    				$orderValue .= '0'.$ord;
+	    			} else {
+	    				$orderValue .= $ord;
+	    			}
+	    		}
+	    		$orderValue = $orderValue+100000000000000000;
+	    	}
+    	}
+    	return $resultKey = $orderValue.($key*pow(10,$max+1));
     }
 }
