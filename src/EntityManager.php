@@ -124,7 +124,11 @@ class EntityManager
     	} elseif ($order && $order[key($order)] == 'DESC') {
     		krsort($results);
     	}
-    	return array_values($results);
+    	$arraySort = array_values($results);
+    	if ($maxLine == 1) {
+    		return $arraySort[0];
+    	}
+    	return $arraySort;
     }
 
     /**
@@ -154,7 +158,11 @@ class EntityManager
     	} elseif ($order && $order[key($order)] == 'DESC') {
     		krsort($results);
     	}
-    	return array_values($results);
+    	$arraySort = array_values($results);
+    	if ($maxLine == 1) {
+    		return $arraySort[0];
+    	}
+    	return $arraySort;
     }
 
     /**
