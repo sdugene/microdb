@@ -141,7 +141,7 @@ class EntityManager
      */
     private function findWithJoin($criteria = [], $join = [], $maxLine = false, $order = false, $group = false)
     {
-        $results = [];
+    	$results = [];
     	$array = $this->database->find($criteria);
     	$max = max(array_keys($array));
     	foreach ($array as $key => $value) {
@@ -149,8 +149,9 @@ class EntityManager
     			break;
     		}
     		$resultKey = $this->order($key, $value, $order, $max);
-    		$results[$resultKey] = Object::fillWithJSon($this->entity, json_encode($value));
-    		$results[$resultKey] = $this->join($join, $results[$resultKey]);
+    		$this->entity = new $this->class();
+    		$object = Object::fillWithJSon($this->entity, json_encode($value));
+    		$results[$resultKey] = $this->join($join, $object);
     	}
     	
     	if ($order && $order[key($order)] == 'ASC') {
@@ -239,7 +240,6 @@ class EntityManager
             	}
             }
     	}
-    	
     	return $joinCriteria; 
     }
     
@@ -262,16 +262,35 @@ class EntityManager
     		}
     	}
     }
+
+    /// METHODS
+    /**
+     * @param $entity
+     * @param $string
+     * @return string
+     */
+    public function mappingGetValue($entity, $string)
+    {
+    	$class = get_class($entity);
+    	$mapping = Mapping::getReader($class);
+    	$reflectionClass = new \ReflectionClass($class);
+        $table = $reflectionClass->getShortName();
+        $mapping->getPropertiesMapping();
+        return $mapping->getName($table).'.'.$mapping->getValue($string);
+    }
+    
     
     private function order($key, $array, $order, $max)
     {
     	if (!$order) {
     		return $key;
     	}
-    	
     	$orderValue = '';
     	foreach ($order as $target => $value) {
-	    	if (is_numeric($array[$target])) {
+    		if (preg_match('/^(.*)\.(.*)$/', $target, $matches)) {
+    			$newOrder = lcfirst(str_replace('_', '', ucwords($matches[1], $delimiters = "_"))).'_'.$matches[2];
+    			$orderValue .= $this->order($key, $array, [$newOrder => $value], 1);
+    		} elseif (is_numeric($array[$target])) {
 	    		$orderValue .= $array[$target]*1000000;
 	    	} else {
 	    		for($i=0 ; $i < 7 ; $i++) {
