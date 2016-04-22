@@ -53,6 +53,8 @@ class EntityManager
 	    	$this->database->setPath($this->folder.$this->entity->getClassName());
     	} else {
     		$this->database->setPath($this->folder.$entity);
+    		$class = '\\Engine\\Entities\\'.$entity;
+    		$this->entity = new $class();
     	}
     	return $this;
     }
@@ -126,6 +128,7 @@ class EntityManager
     	}
     	$arraySort = array_values($results);
     	if ($maxLine == 1) {
+    		Object::fillWithJSon($this->entity, json_encode($arraySort[0]));
     		return $arraySort[0];
     	}
     	return $arraySort;
@@ -143,27 +146,31 @@ class EntityManager
     {
     	$results = [];
     	$array = $this->database->find($criteria);
-    	$max = max(array_keys($array));
-    	foreach ($array as $key => $value) {
-    		if ($maxLine && count($results) == $maxLine) {
-    			break;
-    		}
-    		$resultKey = $this->order($key, $value, $order, $max);
-    		$this->entity = new $this->class();
-    		$object = Object::fillWithJSon($this->entity, json_encode($value));
-    		$results[$resultKey] = $this->join($join, $object);
+    	if (!empty($array)) {
+	    	$max = max(array_keys($array));
+	    	foreach ($array as $key => $value) {
+	    		if ($maxLine && count($results) == $maxLine) {
+	    			break;
+	    		}
+	    		$resultKey = $this->order($key, $value, $order, $max);
+	    		$this->entity = new $this->class();
+	    		$object = Object::fillWithJSon($this->entity, json_encode($value));
+	    		$results[$resultKey] = $this->join($join, $object);
+	    	}
+	    	
+	    	if ($order && $order[key($order)] == 'ASC') {
+	    		ksort($results);
+	    	} elseif ($order && $order[key($order)] == 'DESC') {
+	    		krsort($results);
+	    	}
+	    	$arraySort = array_values($results);
+	    	if ($maxLine == 1) {
+	    		return $arraySort[0];
+	    	}
+	    	return $arraySort;
+    	} else {
+    		return $array;
     	}
-    	
-    	if ($order && $order[key($order)] == 'ASC') {
-    		ksort($results);
-    	} elseif ($order && $order[key($order)] == 'DESC') {
-    		krsort($results);
-    	}
-    	$arraySort = array_values($results);
-    	if ($maxLine == 1) {
-    		return $arraySort[0];
-    	}
-    	return $arraySort;
     }
 
     /**
@@ -195,7 +202,10 @@ class EntityManager
     
     public function insert($input)
     {
-    	return $this->database->copy($input);
+    	$input['id'] = $this->database->copy($input);
+    	Object::fillWithJSon($this->entity, json_encode($input));
+    	$this->database->save($input['id'], $input);
+    	return $input['id'];
     }
     
     private function join($join, $result)
