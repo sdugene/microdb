@@ -201,7 +201,7 @@ class Database
      */
     public function copy($data)
     {
-    	if (!$this->exists($data['id'])) {
+    	if (!array_key_exists('id', $data) || !$this->exists($data['id'])) {
     		return $this->create($data);
     	} elseif ($this->load($data['id'])) {
     		return $this->save($data['id'], $data);
