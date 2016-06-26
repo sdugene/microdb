@@ -317,4 +317,40 @@ class EntityManager
     	}
     	return $resultKey = $orderValue.($key*pow(10,$max+1));
     }
+
+    /**
+     * @param $input
+     * @param $criteria
+     * @return int
+     */
+    /*public function update($input, $criteria)
+    {
+    	$data=$this->database->find($criteria);
+    	$this->database->copy($data);
+    	Object::fillWithJSon($this->entity, json_encode($input));
+    	$this->database->save($input['id'], $input);
+    	return $input['id'];
+    	
+    	
+    	
+        $values = '';
+        foreach ($input as $key => $value) {
+            if ($values !== '') {
+                $values .= ', ';
+            }
+
+            $mysqlFunction = str_replace('mysql#','',$value);
+            if ($mysqlFunction != $value) {
+                $values .= '`'.addslashes($this->properties[$key]).'`'." = ".$mysqlFunction;
+            } elseif ($value == 'NULL') {
+            	$values .= '`'.addslashes($this->properties[$key]).'`'." = ".$value;
+            } else {
+                $values .= '`'.addslashes($this->properties[$key]).'`'." = '".addslashes($value)."'";
+            }
+        }
+
+        $where = $this->criteria($criteria);
+        $query = "UPDATE ".'`'.$this->tableName.'`'." SET ".$values." ".$where ;
+        return $this->queryPDO($query);
+    }*/
 }
