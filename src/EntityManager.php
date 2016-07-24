@@ -53,8 +53,8 @@ class EntityManager
 	    	$this->database->setPath($this->folder.$this->entity->getClassName());
     	} else {
     		$this->database->setPath($this->folder.$entity);
-    		$class = '\\Engine\\Entities\\'.$entity;
-    		$this->entity = new $class();
+    		$this->class = '\\Engine\\Entities\\'.$entity;
+    		$this->entity = new $this->class();
     	}
     	return $this;
     }
@@ -83,7 +83,7 @@ class EntityManager
         }
         
         if ($args[0] == '*') {
-        	return $this->findByCriteria();
+        	return $this->findByCriteria([], false, ['created' => 'ASC']);
         }
         
         if (is_array($args[1]) && !empty($args[1])) {
