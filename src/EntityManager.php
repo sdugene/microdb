@@ -112,6 +112,9 @@ class EntityManager
     {
     	$results = [];
     	$array = $this->database->find($criteria);
+    	if (empty($array)) {
+    		return $array;
+    	}
     	$max = max(array_keys($array));
     	foreach ($array as $key => $value) {
     		if ($maxLine && count($results) == $maxLine) {
