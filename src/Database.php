@@ -237,7 +237,7 @@ class Database
                 $match = true;
                 $data = $this->load($id);
                 foreach ($where as $key => $value) {
-                    if (@$data[$key] !== $value) {
+                    if (@$data[$key] != $value) {
                         $match = false;
                         break;
                     }
