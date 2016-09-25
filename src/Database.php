@@ -33,23 +33,11 @@ class Database
      */
     public function create(array $data = array())
     {
-        $self = $this;
-
-        return $this->synchronized('_auto', function () use ($self, $data)
-        {
-            if (array_key_exists('id', $data) && is_numeric($data['id'])) {
-            	$next = $data['id'];
-            } elseif ($self->exists('_auto')) {
-				$next = $self->load('_auto', 'next');
-            } else {
-            	return false;
-            }
-
-            $self->save('_auto', array('next' => $next + 1));
-            $self->save($next, $data);
-
-            return $next;
-        });
+        if (array_key_exists('id', $data) && is_numeric($data['id'])) {
+        	$id = $data['id'];
+        	$this->save($data['id'], $data);
+        	return $id;
+        }
 		return false;
     }
 
@@ -68,11 +56,8 @@ class Database
         $this->synchronized($id, function () use ($self, $event)
         {
             $self->triggerId('beforeSave', $event);
-
-            $self->put($this->path . $event->id, $this->encrypt(json_encode($event->data)));
-
-            $self->triggerId('saved', $event);
-
+			$self->put($this->path . $event->id, $this->encrypt(json_encode($event->data)));
+			$self->triggerId('saved', $event);
         });
         
         if (is_file($this->path . $id) && file_get_contents($this->path . $id) === $this->encrypt(json_encode($data))) {
@@ -136,12 +121,9 @@ class Database
         }
 
         $event = new Event($this, $id);
-
-        $this->triggerId('beforeLoad', $event);
-
-        $event->data = json_decode($this->decrypt($this->get($this->path . $event->id)), true);
-
-        $this->triggerId('loaded', $event);
+		$this->triggerId('beforeLoad', $event);
+		$event->data = json_decode($this->decrypt($this->get($this->path . $event->id)), true);
+		$this->triggerId('loaded', $event);
 
         if (isset($key)) {
             return @$event->data[$key];
@@ -179,10 +161,8 @@ class Database
         $this->synchronized($id, function () use ($self, $event)
         {
             $self->triggerId('beforeDelete', $event);
-
-            $self->erase($this->path . $event->id);
-
-            $self->triggerId('deleted', $event);
+			$self->erase($this->path . $event->id);
+			$self->triggerId('deleted', $event);
         });
         
         if (!$this->exists($id)) {
@@ -297,8 +277,7 @@ class Database
     public function eachId($func)
     {
         $res = opendir($this->path);
-
-        while (($id = readdir($res)) !== false) {
+		while (($id = readdir($res)) !== false) {
             if ($id == "." || $id == ".." || $id{0} == '_') {
                 continue;
             }
@@ -368,75 +347,52 @@ class Database
         // remove already acquired locks
         $acquire = array();
         foreach ($locks as $lock) {
-
-            if (!isset($this->locks[$lock])) {
-
-                $acquire[] = $lock;
-
+			if (!isset($this->locks[$lock])) {
+				$acquire[] = $lock;
             }
-
         }
+        
         $locks = $acquire;
-
-        array_unique($locks);
-
-        $handles = array();
+		array_unique($locks);
+		$handles = array();
 
         try {
-
-            // acquire each lock
+			// acquire each lock
             foreach ($locks as $lock) {
-
-                $file = $this->path . '_' . $lock . '_lock';
+				$file = $this->path . '_' . $lock . '_lock';
                 $handle = fopen($file, 'w');
 
                 if ($handle && flock($handle, LOCK_EX)) {
-
-                    $this->locks[$lock] = true;
+					$this->locks[$lock] = true;
                     $handles[$lock] = $handle;
-
-                } else {
-
-                    throw new Exception('Unable to synchronize over ' . $lock);
-
-                }
-
-            }
+				} else {
+					throw new Exception('Unable to synchronize over ' . $lock);
+				}
+			}
 
             $return = $func();
 
             // release
             foreach ($locks as $lock) {
-
-                unset($this->locks[$lock]);
-
-                if (isset($handles[$lock])) {
-
-                    flock($handles[$lock], LOCK_UN);
+				unset($this->locks[$lock]);
+				if (isset($handles[$lock])) {
+					flock($handles[$lock], LOCK_UN);
                     fclose($handles[$lock]);
-
                 }
-
             }
 
             return $return;
 
         } catch (Exception $e) {
-
-            // release
+			// release
             foreach ($locks as $lock) {
-
-                unset($this->locks[$lock]);
-
-                if (isset($handles[$lock])) {
-
-                    flock($handles[$lock], LOCK_UN);
+				unset($this->locks[$lock]);
+				if (isset($handles[$lock])) {
+					flock($handles[$lock], LOCK_UN);
                     fclose($handles[$lock]);
-
                 }
 
             }
-
             throw $e;
         }
 
