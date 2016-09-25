@@ -207,7 +207,6 @@ class EntityManager
     {
     	$input['id'] = $this->database->copy($input);
     	Object::fillWithJSon($this->entity, json_encode($input));
-    	$this->database->save($input['id'], $input);
     	return $input['id'];
     }
     

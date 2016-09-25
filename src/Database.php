@@ -61,7 +61,7 @@ class Database
         });
         
         if (is_file($this->path . $id) && file_get_contents($this->path . $id) === $this->encrypt(json_encode($data))) {
-        	return true;
+        	return $id;
         }
         return false;
     }
