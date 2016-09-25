@@ -33,11 +33,19 @@ class Database
      */
     public function create(array $data = array())
     {
-        if (array_key_exists('id', $data) && is_numeric($data['id'])) {
-        	$id = $data['id'];
-        	$this->save($data['id'], $data);
-        	return $id;
-        }
+        $self = $this;
+        return $this->synchronized('_auto', function () use ($self, $data)
+        {
+            $next = 1;
+            if (array_key_exists('id', $data) && is_numeric($data['id'])) {
+            	$next = $data['id'];
+            } elseif ($self->exists('_auto')) {
+				$next = $self->load('_auto', 'next');
+            }
+            $self->save('_auto', array('next' => $next + 1));
+            $self->save($next, $data);
+            return $next;
+        });
 		return false;
     }
 

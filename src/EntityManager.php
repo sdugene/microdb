@@ -325,34 +325,20 @@ class EntityManager
      * @param $criteria
      * @return int
      */
-    /*public function update($input, $criteria)
+    public function update($newValues, $criteria)
     {
-    	$data=$this->database->find($criteria);
-    	$this->database->copy($data);
-    	Object::fillWithJSon($this->entity, json_encode($input));
-    	$this->database->save($input['id'], $input);
-    	return $input['id'];
+    	$input = (array) $this->findByCriteria($criteria, 1);
     	
-    	
-    	
-        $values = '';
-        foreach ($input as $key => $value) {
-            if ($values !== '') {
-                $values .= ', ';
-            }
-
-            $mysqlFunction = str_replace('mysql#','',$value);
-            if ($mysqlFunction != $value) {
-                $values .= '`'.addslashes($this->properties[$key]).'`'." = ".$mysqlFunction;
-            } elseif ($value == 'NULL') {
-            	$values .= '`'.addslashes($this->properties[$key]).'`'." = ".$value;
-            } else {
-                $values .= '`'.addslashes($this->properties[$key]).'`'." = '".addslashes($value)."'";
-            }
-        }
-
-        $where = $this->criteria($criteria);
-        $query = "UPDATE ".'`'.$this->tableName.'`'." SET ".$values." ".$where ;
-        return $this->queryPDO($query);
-    }*/
+    	if (is_array($input) && !empty($input)) {
+	    	foreach($input as $key => &$value) {
+	    		if (array_key_exists($key, $newValues)) {
+	    			$value = $newValues[$key];
+	    		}
+	    	}
+	    	
+	    	$this->database->save($input['id'], $input);
+	    	return $input['id'];
+    	}
+    	return false;
+    }
 }
