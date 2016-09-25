@@ -41,8 +41,8 @@ class Database
             	$next = $data['id'];
             } elseif ($self->exists('_auto')) {
 				$next = $self->load('_auto', 'next');
-				$data['id'] = $next;
             }
+			$data['id'] = $next;
             $self->save('_auto', array('next' => $next + 1));
             $self->save($next, $data);
             return $next;
