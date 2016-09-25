@@ -22,10 +22,7 @@ class Database
     /**
      * @return void
      */
-    public function __construct()
-    {
-        // I must be empty
-    }
+    public function __construct(){}
 
     /**
      * Create an item with auto incrementing id
@@ -36,17 +33,16 @@ class Database
      */
     public function create(array $data = array())
     {
-
         $self = $this;
 
-        return $this->synchronized('_auto', function () use ($self, $data) {
-
-            $next = 1;
-            
+        return $this->synchronized('_auto', function () use ($self, $data)
+        {
             if (array_key_exists('id', $data) && is_numeric($data['id'])) {
             	$next = $data['id'];
             } elseif ($self->exists('_auto')) {
 				$next = $self->load('_auto', 'next');
+            } else {
+            	return false;
             }
 
             $self->save('_auto', array('next' => $next + 1));
@@ -69,8 +65,8 @@ class Database
     {
         $self = $this;
         $event = new Event($this, $id, $data);
-        $this->synchronized($id, function () use ($self, $event) {
-
+        $this->synchronized($id, function () use ($self, $event)
+        {
             $self->triggerId('beforeSave', $event);
 
             $self->put($this->path . $event->id, $this->encrypt(json_encode($event->data)));
@@ -180,7 +176,8 @@ class Database
         $self = $this;
         $event = new Event($this, $id);
 
-        $this->synchronized($id, function () use ($self, $event) {
+        $this->synchronized($id, function () use ($self, $event)
+        {
             $self->triggerId('beforeDelete', $event);
 
             $self->erase($this->path . $event->id);
@@ -222,7 +219,8 @@ class Database
         $results = array();
 
         if (!is_string($where) && is_callable($where)) {
-            $this->eachId(function ($id) use (&$results, $where, $first) {
+            $this->eachId(function ($id) use (&$results, $where, $first)
+            {
                 $data = $this->load($id);
                 if ($where($data)) {
                     if ($first) {
@@ -233,7 +231,8 @@ class Database
                 }
             });
         } else {
-            $this->eachId(function ($id) use (&$results, $where, $first) {
+            $this->eachId(function ($id) use (&$results, $where, $first)
+            {
                 $match = true;
                 $data = $this->load($id);
                 foreach ($where as $key => $value) {
