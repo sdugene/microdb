@@ -46,8 +46,8 @@ class EntityManager
     /// METHODS
     public function entity($entity)
     {
-    	$this->entity = $entity;
     	if (is_object($entity)) {
+    		$this->entity = $entity;
 	    	$this->class = get_class($this->entity);
 	    	$this->getClassAnnotations();
 	    	$this->database->setPath($this->folder.$this->entity->getClassName());
