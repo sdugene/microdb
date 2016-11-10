@@ -117,7 +117,7 @@ class EntityManager
     	}
     	$max = max(array_keys($array));
     	foreach ($array as $key => $value) {
-    		if ($maxLine && count($results) == $maxLine) {
+    		if (is_numeric($maxLine) && count($results) == $maxLine) {
     			break;
     		}
     		$resultKey = $this->order($key, $value, $order, $max);
@@ -304,7 +304,9 @@ class EntityManager
     			$orderValue .= $this->order($key, $array, [$newOrder => $value], 1);
     		} elseif (is_numeric($array[$target])) {
 	    		$orderValue .= $array[$target]*1000000;
-	    	} else {
+	    	} elseif ($this->validateDate($array[$target])) {
+    		   $orderValue = preg_replace('/[^0-9]*/', '', $array[$target]);
+    		} else {
 	    		for($i=0 ; $i < 7 ; $i++) {
 	    			$ord = ord(substr($array[$target].'       ',$i,1));
 	    			
@@ -317,7 +319,14 @@ class EntityManager
 	    		$orderValue = $orderValue+100000000000000000;
 	    	}
     	}
-    	return $resultKey = $orderValue.($key*pow(10,$max+1));
+    	$resultKey = $orderValue.($key*pow(10,$max+1));
+    	return $resultKey;
+    }
+    
+    private function validateDate($date, $format = 'Y-m-d H:i:s')
+    {
+        $d = \DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) == $date;
     }
 
     /**
