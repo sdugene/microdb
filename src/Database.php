@@ -206,7 +206,6 @@ class Database
     public function find($where = array(), $first = false)
     {
         $results = array();
-
         if (!is_string($where) && is_callable($where)) {
             $this->eachId(function ($id) use (&$results, $where, $first)
             {
@@ -225,7 +224,13 @@ class Database
                 $match = true;
                 $data = $this->load($id);
                 foreach ($where as $key => $value) {
-                    if (@$data[$key] != $value) {
+                    if (is_array($value) && $key == '<=' && !(@$data[key($value)] <= reset($value))) {
+                        $match = false;
+                        break;
+                    } elseif (is_array($value) && $key == '>=' && !(@$data[key($value)] >= reset($value))) {
+                        $match = false;
+                        break;
+                    } elseif (!is_array($value) && @$data[$key] != $value) {
                         $match = false;
                         break;
                     }
