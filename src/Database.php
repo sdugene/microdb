@@ -230,6 +230,9 @@ class Database
                     } elseif (is_array($value) && $key == '>=' && !(@$data[key($value)] >= reset($value))) {
                         $match = false;
                         break;
+                    } elseif (is_array($value) && strtoupper($key) == 'INLIST' && !(@in_array(reset($value), @$data[key($value)]))) {
+                        $match = false;
+                        break;
                     } elseif (!is_array($value) && @$data[$key] != $value) {
                         $match = false;
                         break;
