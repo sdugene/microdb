@@ -260,6 +260,11 @@ class EntityManager
     	return $this->database->delete($id);
     }
     
+    public function truncate($confirm = false)
+    {
+        return $this->database->truncate($confirm);
+    }
+    
     private function useParams($params)
     {
     	foreach($params as $key => $value) {

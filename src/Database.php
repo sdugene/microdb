@@ -74,6 +74,20 @@ class Database
         }
         return false;
     }
+    
+    public function truncate($confirm = false)
+    {
+        if ($confirm === true && is_dir($this->path)) {
+            $result = array_map('unlink', glob($this->path."*"));
+            
+            if (in_array(false, $result)) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Decrypt data
